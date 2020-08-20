@@ -8,8 +8,8 @@ import {
 import { join } from "path";
 import { inspect } from "util";
 
-const inputPath = join(__dirname, "..", "..", "src", "endpoints");
-const outputFile = join(__dirname, "..", "..", "public", "json", "docs.json");
+const inputPath = join(__dirname, "..", "src", "endpoints");
+const outputFile = join(__dirname, "..", "public", "json", "docs.json");
 
 if (existsSync(outputFile)) unlinkSync(outputFile);
 

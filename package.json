@@ -6,11 +6,12 @@
   "main": "build/universalis.js",
   "scripts": {
     "build": "tsc",
+    "build-scripts": "tsc --project ./scripts/tsconfig.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
     "start": "node .",
     "start-dev": "npm run lint && npm run build && npm start",
-    "generate-docs": "node .\\build\\docs\\doc-generator.js",
+    "generate-docs": "node ./scripts/doc-generator.js",
     "test": "mocha --require ts-node/register \"test/**/*.{js,ts,tsx}\"",
     "test-github": "mocha --require ts-node/register test/utilTest.ts test/RemoteDataManagerTest.ts",
     "unic": "node build/cli/unic.js",

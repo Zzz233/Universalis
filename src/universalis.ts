@@ -1,4 +1,3 @@
-// Dependencies
 import cors from "@koa/cors";
 import Router from "@koa/router";
 import Koa from "koa";
@@ -7,20 +6,8 @@ import queryParams from "koa-queryparams";
 import serve from "koa-static";
 import { Collection, MongoClient } from "mongodb";
 
-// Data managers
-// import { CronJobManager } from "./cron/CronJobManager";
-import { BlacklistManager } from "./db/BlacklistManager";
-import { ContentIDCollection } from "./db/ContentIDCollection";
-import { ExtraDataManager } from "./db/ExtraDataManager";
-import { TrustedSourceManager } from "./db/TrustedSourceManager";
-import { RemoteDataManager } from "./remote/RemoteDataManager";
-import { HistoryTracker } from "./trackers/HistoryTracker";
-import { PriceTracker } from "./trackers/PriceTracker";
-import { TransportManager } from "./transports/TransportManager";
+import { Logger, ServerDirectory } from "./service";
 
-import { EorzeanMarketNoteTransport } from "./transports/EorzeanMarketNoteTransport";
-
-// Endpoint parsers
 import { parseContentID } from "./endpoints/parseContentID";
 import { parseHistory } from "./endpoints/parseHistory";
 import { parseLeastRecentlyUpdatedItems } from "./endpoints/parseLeastRecentlyUpdatedItems";
@@ -30,68 +17,32 @@ import { parseTaxRates } from "./endpoints/parseTaxRates";
 import { parseUploaderCounts } from "./endpoints/parseUploaderCounts";
 import { parseUploadHistory } from "./endpoints/parseUploadHistory";
 import { parseWorldUploadCounts } from "./endpoints/parseWorldUploadCounts";
-import { serveItemIDJSON } from "./endpoints/serveItemIDJSON";
-
-import { parseEorzeanMarketNote } from "./endpoints/parseEorzeanMarketNote";
-
+import { serveItemIdJSON } from "./endpoints/serveItemIdJSON";
 import { upload } from "./endpoints/upload";
 
-// Utils
-import { initializeWorldMappings } from "./initializeWorldMappings";
-import { createLogger } from "./util";
 import { parseHighestSaleVelocityItems } from "./endpoints/parseHighestSaleVelocityItems";
 
 // Define application and its resources
-const db = MongoClient.connect("mongodb://localhost:27017/", {
+const db = MongoClient.connect(process.env["UNIVERSALIS_DB_CONNECTION"], {
 	useNewUrlParser: true,
 	useUnifiedTopology: true,
 });
-const logger = createLogger("mongodb://localhost:27017/");
-logger.info("Process started.");
 
-let blacklistManager: BlacklistManager;
-let contentIDCollection: ContentIDCollection;
+Logger.log("Process started.");
+
 let extendedHistory: Collection;
-let extraDataManager: ExtraDataManager;
-let historyTracker: HistoryTracker;
-let priceTracker: PriceTracker;
 let recentData: Collection;
-let remoteDataManager: RemoteDataManager;
-let trustedSourceManager: TrustedSourceManager;
-
-const transportManager = new TransportManager();
-
-const worldMap: Map<string, number> = new Map();
-const worldIDMap: Map<number, string> = new Map();
 
 const init = (async () => {
-	// DB Data Managers
 	const universalisDB = (await db).db("universalis");
-	logger.info(`Database connected: ${(await db).isConnected()}`);
+	Logger.log(`Database connected: ${(await db).isConnected()}`);
 
 	extendedHistory = universalisDB.collection("extendedHistory");
 	recentData = universalisDB.collection("recentData");
 
-	remoteDataManager = new RemoteDataManager({ logger });
-	await remoteDataManager.fetchAll();
-	logger.info("Loaded all remote resources.");
+	await ServerDirectory.initialize();
 
-	blacklistManager = await BlacklistManager.create(logger, universalisDB);
-	contentIDCollection = await ContentIDCollection.create(logger, universalisDB);
-	extraDataManager = await ExtraDataManager.create(
-		remoteDataManager,
-		worldIDMap,
-		universalisDB,
-	);
-	historyTracker = await HistoryTracker.create(universalisDB);
-	priceTracker = await PriceTracker.create(universalisDB);
-	trustedSourceManager = await TrustedSourceManager.create(universalisDB);
-
-	transportManager.addTransport(new EorzeanMarketNoteTransport(logger));
-
-	await initializeWorldMappings(worldMap, worldIDMap);
-
-	logger.info("Connected to database and started data managers.");
+	Logger.log("Connected to database and started data managers.");
 })();
 
 const universalis = new Koa();
@@ -110,7 +61,7 @@ universalis.use(queryParams());
 // Logging
 universalis.use(async (ctx, next) => {
 	if (!ctx.url.includes("upload")) {
-		logger.info(`${ctx.method} ${ctx.url}`);
+		Logger.log(`${ctx.method} ${ctx.url}`);
 	}
 	await next();
 });
@@ -136,66 +87,44 @@ router.get("/docs", async (ctx) => {
 router
 	.get("/api/:world/:item", async (ctx) => {
 		// Normal data
-		await parseListings(
-			ctx,
-			remoteDataManager,
-			worldMap,
-			recentData,
-			transportManager,
-		);
+		await parseListings(ctx, recentData);
 	})
 	.get("/api/history/:world/:item", async (ctx) => {
 		// Extended history
-		await parseHistory(ctx, remoteDataManager, worldMap, extendedHistory);
+		await parseHistory(ctx);
 	})
 	.get("/api/tax-rates", async (ctx) => {
-		await parseTaxRates(ctx, worldMap, extraDataManager);
+		await parseTaxRates(ctx);
 	})
 	/*.get("/api/transports/eorzea-market-note/:world/:item", async (ctx) => {
         await parseEorzeanMarketNote(ctx, transportManager);
     })*/
 	.get("/api/extra/content/:contentID", async (ctx) => {
-		await parseContentID(ctx, contentIDCollection);
+		await parseContentID(ctx);
 	})
 	.get("/api/extra/stats/least-recently-updated", async (ctx) => {
-		await parseLeastRecentlyUpdatedItems(ctx, worldMap, extraDataManager);
+		await parseLeastRecentlyUpdatedItems(ctx);
 	})
 	.get("/api/extra/stats/recently-updated", async (ctx) => {
-		await parseRecentlyUpdatedItems(ctx, extraDataManager);
+		await parseRecentlyUpdatedItems(ctx);
 	})
 	.get("/api/extra/stats/highest-sale-velocity", async (ctx) => {
 		// Note: disable this if it uses too much memory on staging.
-		await parseHighestSaleVelocityItems(ctx, worldMap, worldIDMap, recentData);
+		await parseHighestSaleVelocityItems(ctx);
 	})
 	.get("/api/extra/stats/upload-history", async (ctx) => {
-		await parseUploadHistory(ctx, extraDataManager);
+		await parseUploadHistory(ctx);
 	})
 	.get("/api/extra/stats/world-upload-counts", async (ctx) => {
-		await parseWorldUploadCounts(ctx, extraDataManager);
+		await parseWorldUploadCounts(ctx);
 	})
 	.get("/api/extra/stats/uploader-upload-counts", async (ctx) => {
-		await parseUploaderCounts(ctx, trustedSourceManager);
+		await parseUploaderCounts(ctx);
 	})
 
 	.get("/api/marketable", async (ctx) => {
 		// Marketable item ID JSON
-		await serveItemIDJSON(ctx, remoteDataManager);
-	})
-
-	.post("/upload/:apiKey", async (ctx) => {
-		// Upload process
-		await upload({
-			blacklistManager,
-			contentIDCollection,
-			ctx,
-			extraDataManager,
-			historyTracker,
-			logger,
-			priceTracker,
-			remoteDataManager,
-			trustedSourceManager,
-			worldIDMap,
-		});
+		await serveItemIdJSON(ctx);
 	});
 
 universalis.use(router.routes());
@@ -203,4 +132,4 @@ universalis.use(router.routes());
 // Start server
 const port = process.argv[2] ? parseInt(process.argv[2]) : 4000;
 universalis.listen(port);
-logger.info(`Server started on port ${port}.`);
+Logger.log(`Server started on port ${port}.`);

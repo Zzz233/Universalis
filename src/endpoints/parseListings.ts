@@ -21,16 +21,16 @@ import { ParameterizedContext } from "koa";
 import { Collection } from "mongodb";
 
 import { AveragePrices } from "../models/AveragePrices";
+import { HttpStatusCodes } from "../models/HttpStatusCodes";
 import { MarketBoardHistoryEntry } from "../models/MarketBoardHistoryEntry";
 import { MarketBoardItemListingUpload } from "../models/MarketBoardItemListingUpload";
 import { MarketBoardListingsEndpoint } from "../models/MarketBoardListingsEndpoint";
 import { SaleVelocitySeries } from "../models/SaleVelocitySeries";
 import { StackSizeHistograms } from "../models/StackSizeHistograms";
 import { WorldDCQuery } from "../models/WorldDCQuery";
+import { RemoteDataManager } from "../remote/RemoteDataManager";
 import { TransportManager } from "../transports/TransportManager";
 import { getResearch } from "./parseEorzeanMarketNote";
-import { HttpStatusCodes } from "../models/HttpStatusCodes";
-import { RemoteDataManager } from "../remote/RemoteDataManager";
 
 export async function parseListings(
 	ctx: ParameterizedContext,

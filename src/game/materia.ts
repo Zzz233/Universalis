@@ -51,6 +51,7 @@ export async function materiaValueToMateriaData(materiaValue: number) {
 	return materiaData;
 }
 
+// TODO: wtf
 // https://github.com/xivapi/ffxiv-datamining/blob/master/csv/Materia.csv
 export const materiaIDList = {
 	5604: "Strength Materia I",

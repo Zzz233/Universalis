@@ -11,8 +11,8 @@ import { appendWorldDC, makeDistrTable } from "../util";
 import { ParameterizedContext } from "koa";
 import { Collection } from "mongodb";
 
-import { MinimizedHistoryEntry } from "../models/MinimizedHistoryEntry";
 import { HttpStatusCodes } from "../models/HttpStatusCodes";
+import { MinimizedHistoryEntry } from "../models/MinimizedHistoryEntry";
 import { RemoteDataManager } from "../remote/RemoteDataManager";
 
 export async function parseHistory(

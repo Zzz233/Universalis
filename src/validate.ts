@@ -5,7 +5,7 @@ import * as R from "remeda";
 import sha from "sha.js";
 import util from "util";
 
-import { materiaIDToValueAndTier } from "./materiaUtils";
+import { materiaIDToValueAndTier } from "./game/materia";
 
 import { Context } from "koa";
 
