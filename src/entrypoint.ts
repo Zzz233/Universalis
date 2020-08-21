@@ -11,7 +11,7 @@ import { parseTaxRates } from "./endpoints/parseTaxRates";
 import { parseUploaderCounts } from "./endpoints/parseUploaderCounts";
 import { parseUploadHistory } from "./endpoints/parseUploadHistory";
 import { parseWorldUploadCounts } from "./endpoints/parseWorldUploadCounts";
-import { serveItemIdJSON } from "./endpoints/serveItemIdJSON";
+import { serveItemIdJson } from "./endpoints/serveItemIdJson";
 import { upload } from "./endpoints/upload";
 
 import { parseHighestSaleVelocityItems } from "./endpoints/parseHighestSaleVelocityItems";
@@ -41,7 +41,7 @@ const universalis = new App();
 			.get("/api/extra/stats/upload-history", parseUploadHistory)
 			.get("/api/extra/stats/world-upload-counts", parseWorldUploadCounts)
 			.get("/api/extra/stats/uploader-upload-counts", parseUploaderCounts)
-			.get("/api/marketable", serveItemIdJSON)
+			.get("/api/marketable", serveItemIdJson)
 			.post("/upload", upload);
 	});
 

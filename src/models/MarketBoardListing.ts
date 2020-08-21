@@ -21,11 +21,14 @@ export interface MarketBoardListing extends OriginRecord {
 	isCrafted: boolean;
 
 	retainerID: string;
+
 	creatorID: string | null;
+	creatorName: string | null;
 
 	onMannequin: boolean;
 
 	sellerID: string;
 
 	retainerCity: number;
+	retainerName: string;
 }

@@ -39,7 +39,7 @@ export function cleanListing(listing: MarketBoardListing, sourceName?: string): 
 
 	const newListing = R.pipe(
 		listing,
-		R.pick(["pricePerUnit", "quantity", "stainID", "uploaderID", "worldName"]),
+		R.pick(["pricePerUnit", "quantity", "stainID", "uploaderID", "worldID"]),
 		R.merge(securedFields),
 		R.merge(cleanedListing),
 	);
@@ -88,7 +88,7 @@ export function cleanListingOutput(
 			retainerName: removeUnsafeCharacters(listing.retainerName),
 			total: listing.pricePerUnit * listing.quantity,
 			lastReviewTime:
-				listing.lastReviewTime < gameReleaseDateSeconds
+				listing.lastReviewTime < GAME_RELEASE_DATE_SECONDS
 					? Math.floor(new Date().valueOf() / 1000) - listing.lastReviewTime
 					: listing.lastReviewTime,
 		}),

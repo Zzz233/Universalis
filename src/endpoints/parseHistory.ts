@@ -15,22 +15,14 @@ import { HttpStatusCodes } from "../data/HTTP_STATUS";
 import { MinimizedHistoryEntry } from "../models/MinimizedTransactionEntry";
 import { RemoteDataManager } from "../remote/RemoteDataManager";
 
-export async function parseHistory(
-	ctx: ParameterizedContext,
-	rdm: RemoteDataManager,
-	worldMap: Map<string, number>,
-	history: Collection,
-) {
+export async function parseHistory(ctx: ParameterizedContext) {
 	let entriesToReturn: any = ctx.queryParams.entries;
-	if (entriesToReturn)
-		entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
+	if (entriesToReturn) entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
 
-	const itemIDs: number[] = (ctx.params.item as string)
-		.split(",")
-		.map((id, index) => {
-			if (index > 100) return;
-			return parseInt(id);
-		});
+	const itemIDs: number[] = (ctx.params.item as string).split(",").map((id, index) => {
+		if (index > 100) return;
+		return parseInt(id);
+	});
 
 	if (itemIDs.length === 1) {
 		const marketableItems = await rdm.getMarketableItemIDs();
@@ -63,8 +55,7 @@ export async function parseHistory(
 			stackSizeHistogramHQ: { [key: number]: number };
 			lastUploadTime: number;
 		}) => {
-			if (entriesToReturn)
-				item.entries = item.entries.slice(0, Math.min(500, entriesToReturn));
+			if (entriesToReturn) item.entries = item.entries.slice(0, Math.min(500, entriesToReturn));
 			item.entries = item.entries.map((entry: MinimizedHistoryEntry) => {
 				delete entry.uploaderID;
 				return entry;
@@ -74,19 +65,13 @@ export async function parseHistory(
 			const hqItems = item.entries.filter((entry) => entry.hq);
 
 			item.stackSizeHistogram = makeDistrTable(
-				...item.entries.map((entry) =>
-					entry.quantity != null ? entry.quantity : 0,
-				),
+				...item.entries.map((entry) => (entry.quantity != null ? entry.quantity : 0)),
 			);
 			item.stackSizeHistogramNQ = makeDistrTable(
-				...nqItems.map((entry) =>
-					entry.quantity != null ? entry.quantity : 0,
-				),
+				...nqItems.map((entry) => (entry.quantity != null ? entry.quantity : 0)),
 			);
 			item.stackSizeHistogramHQ = makeDistrTable(
-				...hqItems.map((entry) =>
-					entry.quantity != null ? entry.quantity : 0,
-				),
+				...hqItems.map((entry) => (entry.quantity != null ? entry.quantity : 0)),
 			);
 
 			// Error handling

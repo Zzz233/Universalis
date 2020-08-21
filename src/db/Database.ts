@@ -1,4 +1,6 @@
 import { Database as ArangoDB, DocumentCollection } from "arangojs";
+import { AqlLiteral, AqlQuery } from "arangojs/lib/cjs/aql-query";
+import { ArrayCursor } from "arangojs/lib/cjs/cursor";
 import { Logger } from "../service";
 
 export class Database {
@@ -27,6 +29,10 @@ export class Database {
 			);
 		}
 		return collection;
+	}
+
+	public static async query(qIn: string | AqlQuery | AqlLiteral): Promise<ArrayCursor> {
+		return Database.instance().db.query(qIn);
 	}
 
 	private static sInstance: Database;

@@ -12,15 +12,8 @@ import { WorldItemPair } from "../models/WorldItemPair";
 import { calcSaleVelocity, capitalise } from "../util";
 import validation from "../validate";
 
-export async function parseHighestSaleVelocityItems(
-	ctx: ParameterizedContext,
-	worldMap: Map<string, number>,
-	worldIDMap: Map<number, string>,
-	collection: Collection,
-) {
-	let worldID: string | number = ctx.queryParams.world
-		? capitalise(ctx.queryParams.world)
-		: null;
+export async function parseHighestSaleVelocityItems(ctx: ParameterizedContext) {
+	let worldID: string | number = ctx.queryParams.world ? capitalise(ctx.queryParams.world) : null;
 
 	if (worldID && !parseInt(worldID)) {
 		worldID = worldMap.get(worldID);
@@ -29,8 +22,7 @@ export async function parseHighestSaleVelocityItems(
 	}
 
 	let entriesToReturn: any = ctx.queryParams.entries;
-	if (entriesToReturn)
-		entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
+	if (entriesToReturn) entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
 
 	ctx.body = await getHighestSaleVelocity(
 		worldID as number,
@@ -69,9 +61,7 @@ async function getHighestSaleVelocity(
 				return validation.cleanHistoryEntryOutput(entry);
 			});
 
-			item.saleVelocity = calcSaleVelocity(
-				...item.recentHistory.map((entry) => entry.timestamp),
-			);
+			item.saleVelocity = calcSaleVelocity(...item.recentHistory.map((entry) => entry.timestamp));
 		})
 		.sort("saleVelocity", 1)
 		.limit(Math.min(count, 20));

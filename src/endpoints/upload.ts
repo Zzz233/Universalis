@@ -3,50 +3,20 @@
  * @url /upload
  */
 
+import { Context } from "koa";
 import * as R from "remeda";
-import sha from "sha.js";
 
-// Utils
-import validation from "../validate";
-
-// Load models
-import { City } from "../data/CITY";
-import { HttpStatusCodes } from "../data/HTTP_STATUS";
-import { GenericUpload } from "../models/GenericUpload";
-import { MarketBoardHistoryEntry } from "../models/MarketBoardHistoryEntry";
-import { MarketBoardItemListing } from "../models/MarketBoardItemListing";
-import { TrustedSource } from "../models/TrustedSource";
-import { UploadProcessParameters } from "../models/UploadProcessParameters";
-
-export async function upload(parameters: UploadProcessParameters) {
-	const blacklistManager = parameters.blacklistManager;
-	const contentIDCollection = parameters.contentIDCollection;
-	const ctx = parameters.ctx;
-	const extraDataManager = parameters.extraDataManager;
-	const historyTracker = parameters.historyTracker;
-	const logger = parameters.logger;
-	const priceTracker = parameters.priceTracker;
-	const remoteDataManager = parameters.remoteDataManager;
-	const trustedSourceManager = parameters.trustedSourceManager;
-	const worldIDMap = parameters.worldIDMap;
-
+export async function upload(ctx: Context) {
 	validation.validateUploadDataPreCast(ctx);
 
 	const promises: Array<Promise<any>> = []; // Sort of like a thread list.
 
 	// Accept identity via API key.
-	const trustedSource: TrustedSource = await trustedSourceManager.get(
-		ctx.params.apiKey,
-	);
+	const trustedSource: TrustedSource = await trustedSourceManager.get(ctx.params.apiKey);
 	if (!trustedSource) return ctx.throw(HttpStatusCodes.UNAUTHENTICATED);
 	const sourceName = trustedSource.sourceName;
 	promises.push(trustedSourceManager.increaseUploadCount(ctx.params.apiKey));
-	logger.info(
-		"Received upload from " +
-			sourceName +
-			":\n" +
-			JSON.stringify(ctx.request.body),
-	);
+	logger.info("Received upload from " + sourceName + ":\n" + JSON.stringify(ctx.request.body));
 	promises.push(extraDataManager.incrementDailyUploads());
 
 	// Preliminary data processing and metadata stuff
@@ -67,11 +37,7 @@ export async function upload(parameters: UploadProcessParameters) {
 
 	// Metadata
 	if (uploadData.worldID) {
-		promises.push(
-			extraDataManager.incrementWorldUploads(
-				worldIDMap.get(uploadData.worldID),
-			),
-		);
+		promises.push(extraDataManager.incrementWorldUploads(worldIDMap.get(uploadData.worldID)));
 	}
 
 	if (uploadData.itemID) {
@@ -162,19 +128,11 @@ export async function upload(parameters: UploadProcessParameters) {
 			if (uploadData.itemIDs.length <= 100) {
 				for (const itemID of uploadData.itemIDs) {
 					promises.push(
-						priceTracker.set(
-							uploadData.uploaderID,
-							sourceName,
-							itemID,
-							uploadData.worldID,
-							[],
-						),
+						priceTracker.set(uploadData.uploaderID, sourceName, itemID, uploadData.worldID, []),
 					);
 				}
 			} else {
-				logger.warn(
-					"Attempted to run a bulk delisting of over 100 items, rejecting.",
-				);
+				logger.warn("Attempted to run a bulk delisting of over 100 items, rejecting.");
 				return ctx.throw(HttpStatusCodes.UNPROCESSABLE_ENTITY);
 			}
 		}

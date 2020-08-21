@@ -11,15 +11,8 @@ import { Collection, Cursor } from "mongodb";
 import { ItemDemand } from "../models/ItemDemand";
 import { capitalise } from "../util";
 
-export async function parseMostDemandedItems(
-	ctx: ParameterizedContext,
-	worldMap: Map<string, number>,
-	worldIDMap: Map<number, string>,
-	history: Collection,
-) {
-	let worldID: string | number = ctx.queryParams.world
-		? capitalise(ctx.queryParams.world)
-		: null;
+export async function parseMostDemandedItems(ctx: ParameterizedContext) {
+	let worldID: string | number = ctx.queryParams.world ? capitalise(ctx.queryParams.world) : null;
 
 	if (worldID && !parseInt(worldID)) {
 		worldID = worldMap.get(worldID);
@@ -28,14 +21,9 @@ export async function parseMostDemandedItems(
 	}
 
 	let entriesToReturn: any = ctx.queryParams.entries;
-	if (entriesToReturn)
-		entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
+	if (entriesToReturn) entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
 
-	ctx.body = await getMostDemandedItems(
-		worldID as number,
-		entriesToReturn,
-		history,
-	);
+	ctx.body = await getMostDemandedItems(worldID as number, entriesToReturn, history);
 }
 
 async function getMostDemandedItems(

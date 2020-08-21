@@ -7,21 +7,11 @@
 
 import { ParameterizedContext } from "koa";
 
-import { ExtraDataManager } from "../db/ExtraDataManager";
-
-import { DailyUploadStatistics } from "../models/DailyUploadStatistics";
-
-export async function parseUploadHistory(
-	ctx: ParameterizedContext,
-	extraDataManager: ExtraDataManager,
-) {
+export async function parseUploadHistory(ctx: ParameterizedContext) {
 	let daysToReturn: any = ctx.queryParams.entries;
-	if (daysToReturn)
-		daysToReturn = parseInt(daysToReturn.replace(/[^0-9]/g, ""));
+	if (daysToReturn) daysToReturn = parseInt(daysToReturn.replace(/[^0-9]/g, ""));
 
-	const data: DailyUploadStatistics = await extraDataManager.getDailyUploads(
-		daysToReturn,
-	);
+	const data: DailyUploadStatistics = await extraDataManager.getDailyUploads(daysToReturn);
 
 	if (!data) {
 		ctx.body = {

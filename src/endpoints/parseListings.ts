@@ -12,39 +12,14 @@ import {
 	calcSaleVelocity,
 	calcStandardDeviation,
 	calcTrimmedAverage,
-	getWorldDC,
 	makeDistrTable,
 } from "../util";
-import validation from "../validate";
 
-import { ParameterizedContext } from "koa";
-import { Collection } from "mongodb";
-
-import { HttpStatusCodes } from "../data/HTTP_STATUS";
-import { AveragePrices } from "../models/AveragePrices";
-import { MarketBoardHistoryEntry } from "../models/MarketBoardHistoryEntry";
-import { MarketBoardItemListingUpload } from "../models/MarketBoardItemListingUpload";
-import { MarketBoardListingsEndpoint } from "../models/MarketBoardListingsEndpoint";
-import { SaleVelocitySeries } from "../models/SaleVelocitySeries";
-import { StackSizeHistograms } from "../models/StackSizeHistograms";
-import { WorldDCQuery } from "../models/WorldDCQuery";
-import { RemoteDataManager } from "../remote/RemoteDataManager";
-import { TransportManager } from "../transports/TransportManager";
-import { getResearch } from "./parseEorzeanMarketNote";
-
-export async function parseListings(
-	ctx: ParameterizedContext,
-	rdm: RemoteDataManager,
-	worldMap: Map<string, number>,
-	recentData: Collection,
-	transportManager: TransportManager,
-) {
-	const itemIDs: number[] = (ctx.params.item as string)
-		.split(",")
-		.map((id, index) => {
-			if (index > 100) return;
-			return parseInt(id);
-		});
+export async function parseListings(ctx: ParameterizedContext) {
+	const itemIDs: number[] = (ctx.params.item as string).split(",").map((id, index) => {
+		if (index > 100) return;
+		return parseInt(id);
+	});
 
 	if (itemIDs.length === 1) {
 		const marketableItems = await rdm.getMarketableItemIDs();
@@ -60,9 +35,7 @@ export async function parseListings(
 	// Request database info
 	let data = {
 		itemIDs,
-		items: await recentData
-			.find(query, { projection: { _id: 0, uploaderID: 0 } })
-			.toArray(),
+		items: await recentData.find(query, { projection: { _id: 0, uploaderID: 0 } }).toArray(),
 	};
 	appendWorldDC(data, worldMap, ctx);
 
@@ -77,11 +50,7 @@ export async function parseListings(
 				item.listings,
 				R.sort((a, b) => a.pricePerUnit - b.pricePerUnit),
 				R.map((listing) => {
-					if (
-						!listing.retainerID.length ||
-						!listing.sellerID.length ||
-						!listing.creatorID.length
-					) {
+					if (!listing.retainerID.length || !listing.sellerID.length || !listing.creatorID.length) {
 						listing = validation.cleanListing(
 							(listing as unknown) as MarketBoardItemListingUpload,
 						) as any; // Something needs to be done about this
@@ -116,11 +85,7 @@ export async function parseListings(
 			const hqItems = item.recentHistory.filter((entry) => entry.hq);
 
 			// Average sale velocities with EMN data
-			const saleVelocities = calculateSaleVelocities(
-				item.recentHistory,
-				nqItems,
-				hqItems,
-			);
+			const saleVelocities = calculateSaleVelocities(item.recentHistory, nqItems, hqItems);
 			/*saleVelocities.nqSaleVelocity =
 				(saleVelocities.nqSaleVelocity + emnData.turnoverPerDayNQ) / 2;
 			saleVelocities.hqSaleVelocity =
@@ -172,15 +137,9 @@ function calculateSaleVelocities(
 	hqSeries: MarketBoardHistoryEntry[],
 ): SaleVelocitySeries {
 	// Per day
-	const regularSaleVelocity = calcSaleVelocity(
-		...regularSeries.map((entry) => entry.timestamp),
-	);
-	const nqSaleVelocity = calcSaleVelocity(
-		...nqSeries.map((entry) => entry.timestamp),
-	);
-	const hqSaleVelocity = calcSaleVelocity(
-		...hqSeries.map((entry) => entry.timestamp),
-	);
+	const regularSaleVelocity = calcSaleVelocity(...regularSeries.map((entry) => entry.timestamp));
+	const nqSaleVelocity = calcSaleVelocity(...nqSeries.map((entry) => entry.timestamp));
+	const hqSaleVelocity = calcSaleVelocity(...hqSeries.map((entry) => entry.timestamp));
 	return {
 		regularSaleVelocity,
 		nqSaleVelocity,
@@ -196,18 +155,9 @@ function calculateAveragePrices(
 	const ppu = regularSeries.map((entry) => entry.pricePerUnit);
 	const nqPpu = nqSeries.map((entry) => entry.pricePerUnit);
 	const hqPpu = hqSeries.map((entry) => entry.pricePerUnit);
-	const averagePrice = calcTrimmedAverage(
-		calcStandardDeviation(...ppu),
-		...ppu,
-	);
-	const averagePriceNQ = calcTrimmedAverage(
-		calcStandardDeviation(...nqPpu),
-		...nqPpu,
-	);
-	const averagePriceHQ = calcTrimmedAverage(
-		calcStandardDeviation(...hqPpu),
-		...hqPpu,
-	);
+	const averagePrice = calcTrimmedAverage(calcStandardDeviation(...ppu), ...ppu);
+	const averagePriceNQ = calcTrimmedAverage(calcStandardDeviation(...nqPpu), ...nqPpu);
+	const averagePriceHQ = calcTrimmedAverage(calcStandardDeviation(...hqPpu), ...hqPpu);
 	return {
 		averagePrice,
 		averagePriceNQ,
@@ -220,15 +170,9 @@ function makeStackSizeHistograms(
 	nqSeries: MarketBoardHistoryEntry[],
 	hqSeries: MarketBoardHistoryEntry[],
 ): StackSizeHistograms {
-	const stackSizeHistogram = makeDistrTable(
-		...regularSeries.map((entry) => entry.quantity),
-	);
-	const stackSizeHistogramNQ = makeDistrTable(
-		...nqSeries.map((entry) => entry.quantity),
-	);
-	const stackSizeHistogramHQ = makeDistrTable(
-		...hqSeries.map((entry) => entry.quantity),
-	);
+	const stackSizeHistogram = makeDistrTable(...regularSeries.map((entry) => entry.quantity));
+	const stackSizeHistogramNQ = makeDistrTable(...nqSeries.map((entry) => entry.quantity));
+	const stackSizeHistogramHQ = makeDistrTable(...hqSeries.map((entry) => entry.quantity));
 	return {
 		stackSizeHistogram,
 		stackSizeHistogramNQ,

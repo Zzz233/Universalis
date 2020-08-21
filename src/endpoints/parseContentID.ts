@@ -9,12 +9,7 @@
 
 import { ParameterizedContext } from "koa";
 
-import { ContentIDCollection } from "../db/ContentIDCollection";
-
-export async function parseContentID(
-	ctx: ParameterizedContext,
-	contentIDCollection: ContentIDCollection,
-) {
+export async function parseContentID(ctx: ParameterizedContext) {
 	const content = await contentIDCollection.get(ctx.params.contentID);
 
 	if (!content) {

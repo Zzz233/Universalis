@@ -6,14 +6,7 @@
 
 import { ParameterizedContext } from "koa";
 
-import { ExtraDataManager } from "../db/ExtraDataManager";
-
-import { WorldUploadCount } from "../models/WorldUploadCount";
-
-export async function parseWorldUploadCounts(
-	ctx: ParameterizedContext,
-	extraDataManager: ExtraDataManager,
-) {
+export async function parseWorldUploadCounts(ctx: ParameterizedContext) {
 	const worldUploadCounts = await extraDataManager.getWorldUploadCounts();
 
 	const mergedEntries = {};
