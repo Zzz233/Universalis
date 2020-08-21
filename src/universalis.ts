@@ -1,9 +1,3 @@
-import cors from "@koa/cors";
-import Router from "@koa/router";
-import Koa from "koa";
-import bodyParser from "koa-bodyparser";
-import queryParams from "koa-queryparams";
-import serve from "koa-static";
 import { Collection, MongoClient } from "mongodb";
 
 import { Logger, ServerDirectory } from "./service";
@@ -28,8 +22,6 @@ const db = MongoClient.connect(process.env["UNIVERSALIS_DB_CONNECTION"], {
 	useUnifiedTopology: true,
 });
 
-Logger.log("Process started.");
-
 let extendedHistory: Collection;
 let recentData: Collection;
 
@@ -45,38 +37,11 @@ const init = (async () => {
 	Logger.log("Connected to database and started data managers.");
 })();
 
-const universalis = new Koa();
-// CORS support
-universalis.use(cors());
-// POST endpoint enabling
-universalis.use(
-	bodyParser({
-		enableTypes: ["json"],
-		jsonLimit: "3mb",
-	}),
-);
-// Query parameters
-universalis.use(queryParams());
-
-// Logging
-universalis.use(async (ctx, next) => {
-	if (!ctx.url.includes("upload")) {
-		Logger.log(`${ctx.method} ${ctx.url}`);
-	}
-	await next();
-});
-
 // Use single init await
 universalis.use(async (_, next) => {
 	await init;
 	await next();
 });
-
-// Publish public resources
-universalis.use(serve("./public"));
-
-// Routing
-const router = new Router();
 
 // Documentation page (temporary)
 router.get("/docs", async (ctx) => {
@@ -126,8 +91,6 @@ router
 		// Marketable item ID JSON
 		await serveItemIdJSON(ctx);
 	});
-
-universalis.use(router.routes());
 
 // Start server
 const port = process.argv[2] ? parseInt(process.argv[2]) : 4000;

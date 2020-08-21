@@ -10,8 +10,8 @@ import { materiaIDToValueAndTier } from "./game/materia";
 import { Context } from "koa";
 
 import { Logger } from "winston";
-import { City } from "./models/City";
-import { HttpStatusCodes } from "./models/HttpStatusCodes";
+import { HttpStatusCodes } from "./data/HTTP_STATUS";
+import { City } from "./data/CITY";
 import { ItemMateria } from "./models/ItemMateria";
 import { MarketBoardHistoryEntry } from "./models/MarketBoardHistoryEntry";
 import { MarketBoardItemListing } from "./models/MarketBoardItemListing";

@@ -1,4 +1,4 @@
-export const City = {
+export const CITY = {
 	"Limsa Lominsa": 0x01,
 	Gridania: 0x02,
 	"Ul'dah": 0x03,

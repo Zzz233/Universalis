@@ -1,5 +1,5 @@
 export interface ItemDemand {
 	itemID: number;
-	worldID?: number;
+	worldID: number;
 	gilTradeVolumePerDay: number;
 }

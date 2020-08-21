@@ -20,8 +20,8 @@ import validation from "../validate";
 import { ParameterizedContext } from "koa";
 import { Collection } from "mongodb";
 
+import { HttpStatusCodes } from "../data/HTTP_STATUS";
 import { AveragePrices } from "../models/AveragePrices";
-import { HttpStatusCodes } from "../models/HttpStatusCodes";
 import { MarketBoardHistoryEntry } from "../models/MarketBoardHistoryEntry";
 import { MarketBoardItemListingUpload } from "../models/MarketBoardItemListingUpload";
 import { MarketBoardListingsEndpoint } from "../models/MarketBoardListingsEndpoint";

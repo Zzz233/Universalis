@@ -1,5 +1,4 @@
-import { DC_WORLDS } from "../data/DC_WORLDS";
-import { WORLD_ALIASES } from "../data/WORLD_ALIASES";
+import { DC_WORLDS, WORLD_ALIASES } from "../data";
 import { World } from "../models/World";
 import { getSheet } from "../util";
 

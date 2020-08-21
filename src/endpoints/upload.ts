@@ -10,9 +10,9 @@ import sha from "sha.js";
 import validation from "../validate";
 
 // Load models
-import { City } from "../models/City";
+import { City } from "../data/CITY";
+import { HttpStatusCodes } from "../data/HTTP_STATUS";
 import { GenericUpload } from "../models/GenericUpload";
-import { HttpStatusCodes } from "../models/HttpStatusCodes";
 import { MarketBoardHistoryEntry } from "../models/MarketBoardHistoryEntry";
 import { MarketBoardItemListing } from "../models/MarketBoardItemListing";
 import { TrustedSource } from "../models/TrustedSource";

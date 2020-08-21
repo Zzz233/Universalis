@@ -1,4 +1,5 @@
-export enum HttpStatusCodes {
+export enum HTTP_STATUS {
+	OK = 200,
 	UNAUTHENTICATED = 401,
 	FORBIDDEN = 403,
 	NOT_FOUND = 404,

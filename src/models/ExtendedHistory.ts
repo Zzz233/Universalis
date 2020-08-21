@@ -1,8 +1,9 @@
-import { MinimizedHistoryEntry } from "./MinimizedHistoryEntry";
+import { MinimizedTransactionEntry } from "./MinimizedTransactionEntry";
 
 export interface ExtendedHistory {
+	dcName: string;
 	worldID: number;
 	itemID: number;
 	lastUploadTime: number;
-	entries: MinimizedHistoryEntry[];
+	entries: MinimizedTransactionEntry[];
 }

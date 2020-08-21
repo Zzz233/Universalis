@@ -1,4 +1,4 @@
-export const Stain = {
+export const STAIN = {
 	1: "Snow White",
 	2: "Ash Grey",
 	3: "Goobbue Grey",

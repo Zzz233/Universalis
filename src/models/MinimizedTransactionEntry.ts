@@ -1,7 +1,7 @@
-export interface MinimizedHistoryEntry {
+export interface MinimizedTransactionEntry {
 	hq: boolean;
 	pricePerUnit: number;
-	quantity?: number;
+	quantity: number;
 	timestamp: number;
 	uploaderID: string;
 }

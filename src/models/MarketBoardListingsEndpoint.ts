@@ -1,24 +1,24 @@
-import { MarketBoardHistoryEntry } from "./MarketBoardHistoryEntry";
-import { MarketBoardItemListing } from "./MarketBoardItemListing";
+import { MarketBoardListingHydrated } from "./MarketBoardListingHydrated";
+import { MarketBoardTransactionRecordHydrated } from "./MarketBoardTransactionRecordHydrated";
 
 export interface MarketBoardListingsEndpoint {
 	itemID: number;
 	lastUploadTime: number;
-	listings?: MarketBoardItemListing[];
-	recentHistory?: MarketBoardHistoryEntry[];
-	worldID?: number;
-	dcName?: string;
+	listings: MarketBoardListingHydrated[];
+	recentHistory: MarketBoardTransactionRecordHydrated[];
+	worldID: number;
+	dcName: string;
 
-	averagePrice?: number;
-	averagePriceNQ?: number;
-	averagePriceHQ?: number;
+	averagePrice: number;
+	averagePriceNQ: number;
+	averagePriceHQ: number;
 
-	saleVelocity?: number;
-	saleVelocityNQ?: number;
-	saleVelocityHQ?: number;
-	saleVelocityUnits?: "per day";
+	saleVelocity: number;
+	saleVelocityNQ: number;
+	saleVelocityHQ: number;
+	saleVelocityUnits: "per day";
 
-	stackSizeHistogram?: { [key: number]: number };
-	stackSizeHistogramNQ?: { [key: number]: number };
-	stackSizeHistogramHQ?: { [key: number]: number };
+	stackSizeHistogram: { [key: number]: number };
+	stackSizeHistogramNQ: { [key: number]: number };
+	stackSizeHistogramHQ: { [key: number]: number };
 }

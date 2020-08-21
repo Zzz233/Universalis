@@ -1,18 +1,17 @@
-import { MarketBoardHistoryEntry } from "./MarketBoardHistoryEntry";
-import { MarketBoardItemListingUpload } from "./MarketBoardItemListingUpload";
+import { MarketBoardListing } from "./MarketBoardListing";
+import { MarketBoardTransactionRecord } from "./MarketBoardTransactionRecord";
 import { MarketTaxRates } from "./MarketTaxRates";
+import { TrustedUpload } from "./TrustedUpload";
 
-export interface GenericUpload {
-	uploaderID: number | string;
-
+export interface GenericUpload extends TrustedUpload {
 	itemID?: number;
 	itemIDs?: number[];
 	worldID?: number;
 
 	contentID?: string | number;
 	characterName?: string;
-	entries?: MarketBoardHistoryEntry[];
-	listings?: MarketBoardItemListingUpload[];
+	entries?: MarketBoardTransactionRecord[];
+	listings?: MarketBoardListing[];
 	marketTaxRates?: MarketTaxRates;
 
 	op?: {
