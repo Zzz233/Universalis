@@ -19,7 +19,9 @@ A crowdsourced market board aggregator.
 Please see goat's [ACT plugin](https://github.com/goaaats/universalis_act_plugin) for an example of how to collect and upload market board data.
 
 ## Development
-Requires [Node.js](https://nodejs.org/) v10 or higher, [PHP](https://www.php.net/downloads.php), [MariaDB](https://mariadb.org/download/), [Redis](https://redis.io/download), [Composer](https://getcomposer.org/), and [MongoDB Community Edition](https://docs.mongodb.com/manual/administration/install-community/) v4.2 or higher.
+Use of an AQL syntax-highlighting plugin is recommended.
+
+Requires [Node.js](https://nodejs.org/) v10 or higher, [PHP](https://www.php.net/downloads.php), [MariaDB](https://mariadb.org/download/), [Redis](https://redis.io/download), [Composer](https://getcomposer.org/), and [ArangoDB Community Edition](https://www.arangodb.com/download-major/) v3.7 or higher.
 
 Also build a DataExports and an icon2x by running the exporter solution.
 
@@ -68,61 +70,4 @@ sudo chmod 0777 var/ -R
 ### Single-line form
 ```
 sudo rm -rf var/ && sudo redis-cli FLUSHALL && sudo php bin/console PopulateGameDataCommand -vvv && sudo php bin/console ImportTranslationsCommand -vvv && sudo chmod 0777 var/ -R
-```
-
-## Uploads
-Listings upload format (JSON):
-
-```
-{
-    worldID: number;
-    itemID: number;
-    uploaderID: string | number;
-    listings: [{
-        listingID: string;
-        hq: boolean;
-        materia?: ItemMateria[];
-        pricePerUnit: number;
-        quantity: number;
-        total?: number;
-        retainerID: string;
-        retainerName: string;
-        retainerCity: number;
-        creatorName?: string;
-        onMannequin?: boolean;
-        sellerID: string;
-        creatorID?: string;
-        lastReviewTime: number;
-        stainID?: number;
-    }];
-}
-```
-
-History upload format (JSON):
-
-```
-{
-    worldID: number;
-    itemID: number;
-    uploaderID: number | string;
-    entries: [{
-        hq: boolean;
-        pricePerUnit: number;
-        quantity: number;
-        total?: number;
-        buyerName: string;
-        timestamp: number;
-        onMannequin?: boolean;
-        sellerID: string;
-    }];
-}
-```
-
-Crafter upload format (JSON):
-
-```
-{
-    contentID: number;
-    characterName: string;
-}
 ```

@@ -5,24 +5,23 @@
  * @returns items RecentlyUpdated The most-recently-updated items, up to "entries".
  */
 
+import { aql } from "arangojs";
 import { ParameterizedContext } from "koa";
-
-import { ExtraDataManager } from "../db/ExtraDataManager";
-
-import { RecentlyUpdated } from "../models/RecentlyUpdated";
+import { Database } from "../db";
+import { tryGetEntriesToReturn } from "../util";
 
 export async function parseRecentlyUpdatedItems(ctx: ParameterizedContext) {
-	let entriesToReturn: any = ctx.queryParams.entries;
-	if (entriesToReturn) entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
+	const entriesToReturn = tryGetEntriesToReturn(ctx) || 50;
 
-	const data: RecentlyUpdated = await extraDataManager.getRecentlyUpdatedItems(entriesToReturn);
+	const data = await Database.query(aql`
+		FOR record in UploadHistory
+			FILTER record.itemID != null
+			SORT record.timestamp DESC
+			LIMIT ${entriesToReturn}
+			RETURN record.itemID
+	`);
 
-	if (!data) {
-		ctx.body = {
-			items: [],
-		} as RecentlyUpdated;
-		return;
-	}
-
-	ctx.body = data;
+	ctx.body = {
+		items: await data.all(),
+	};
 }

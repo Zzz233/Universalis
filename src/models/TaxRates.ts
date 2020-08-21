@@ -1,4 +1,6 @@
-export interface MarketTaxRates {
+export interface TaxRates {
+	_key: string;
+	worldId: number;
 	limsaLominsa: number;
 	gridania: number;
 	uldah: number;

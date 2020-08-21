@@ -6,9 +6,6 @@
         "no-console": {
             "severity": "warn"
         },
-        "no-bitwise": false,
-        "no-string-literal": false,
-        "no-var-requires": false,
         "object-literal-sort-keys": false,
         "radix": false
     }

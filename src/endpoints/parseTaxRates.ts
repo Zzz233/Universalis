@@ -12,22 +12,19 @@
 
 import { ParameterizedContext } from "koa";
 
-import { ExtraDataManager } from "../db/ExtraDataManager";
-
-import { MarketTaxRates } from "../models/MarketTaxRates";
-import { capitalise } from "../util";
+import { HTTP_STATUS } from "../data";
+import { Database } from "../db";
+import { TaxRates } from "../models/TaxRates";
+import { tryGetWorldId } from "../util";
 
 export async function parseTaxRates(ctx: ParameterizedContext) {
-	let worldID: string | number = ctx.queryParams.world ? capitalise(ctx.queryParams.world) : null;
-
-	if (worldID && !parseInt(worldID)) {
-		worldID = worldMap.get(worldID);
-	} else if (parseInt(worldID)) {
-		worldID = parseInt(worldID);
+	const worldId = tryGetWorldId(ctx);
+	if (worldId == null) {
+		ctx.throw(HTTP_STATUS.NOT_FOUND, "Invalid World");
 	}
-	if (!worldID) return ctx.throw(404, "Invalid World");
 
-	const taxRates: MarketTaxRates = await extraDataManager.getTaxRates(worldID as number);
+	const collection = await Database.collection<TaxRates>("TaxRates");
+	const taxRates = await collection.document(`${worldId}`);
 
 	if (!taxRates) {
 		ctx.body = {

@@ -1,6 +1,6 @@
-import { MarketBoardListing } from "./MarketBoardListing";
-import { MarketBoardTransactionRecord } from "./MarketBoardTransactionRecord";
-import { MarketTaxRates } from "./MarketTaxRates";
+import { Listing } from "./Listing";
+import { TaxRates } from "./TaxRates";
+import { TransactionRecord } from "./TransactionRecord";
 import { TrustedUpload } from "./TrustedUpload";
 
 export interface GenericUpload extends TrustedUpload {
@@ -10,9 +10,9 @@ export interface GenericUpload extends TrustedUpload {
 
 	contentID?: string | number;
 	characterName?: string;
-	entries?: MarketBoardTransactionRecord[];
-	listings?: MarketBoardListing[];
-	marketTaxRates?: MarketTaxRates;
+	entries?: TransactionRecord[];
+	listings?: Listing[];
+	marketTaxRates?: TaxRates;
 
 	op?: {
 		listings?: number;

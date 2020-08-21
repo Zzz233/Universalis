@@ -1,8 +1,6 @@
 const data = require("../public/json/materia.json");
 
-export function materiaIDToValueAndTier(
-	materiaID: number,
-): { materiaID: number; tier: number } {
+export function materiaIDToValueAndTier(materiaID: number): { materiaID: number; tier: number } {
 	const materiaIDAsString = "" + materiaID;
 	for (const row of data) {
 		if (row.includes(materiaIDAsString)) {
@@ -18,16 +16,12 @@ export function materiaIDToValueAndTier(
 	};
 }
 
-export async function materiaValueToItemID(
-	materiaValue: number,
-): Promise<number> {
+export async function materiaValueToItemID(materiaValue: number): Promise<number> {
 	const materiaData = await this.materiaValueToMateriaData(materiaValue);
 	return data[materiaData.materiaID + 3][materiaData.tier + 1];
 }
 
-export async function materiaValueToItemName(
-	materiaValue: number,
-): Promise<string> {
+export async function materiaValueToItemName(materiaValue: number): Promise<string> {
 	const itemID = await this.materiaValueToItemID(materiaValue);
 	return this.materiaIDList[itemID];
 }
@@ -44,9 +38,11 @@ export async function materiaValueToMateriaData(materiaValue: number) {
 		materiaValue,
 	};
 
+	// tslint:disable: no-bitwise
 	materiaData.materiaID = (materiaValue & 0xff0) >> 4;
 	materiaData.tier = materiaValue & 0xf;
 	materiaData.leftover = materiaValue >> 8;
+	// tslint:enable: no-bitwise
 
 	return materiaData;
 }

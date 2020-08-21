@@ -8,15 +8,24 @@
  */
 
 import { ParameterizedContext } from "koa";
+import { HTTP_STATUS } from "../data";
+import { Database } from "../db";
+import { Content } from "../models/Content";
 
 export async function parseContentID(ctx: ParameterizedContext) {
-	const content = await contentIDCollection.get(ctx.params.contentID);
+	if (!ctx.params.contentID) {
+		ctx.throw(HTTP_STATUS.NOT_FOUND);
+	}
+
+	const collection = await Database.collection("Content");
+	const content = await collection.document(ctx.params.contentID);
 
 	if (!content) {
 		ctx.body = {
 			contentID: null,
 			contentType: null,
-		};
+			content: null,
+		} as Content;
 		return;
 	}
 

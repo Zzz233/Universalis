@@ -1,5 +1,5 @@
-import { MarketBoardTransactionRecord } from "../models/MarketBoardTransactionRecord";
-import { MarketTaxRates } from "../models/MarketTaxRates";
+import { TaxRates } from "../models/TaxRates";
+import { TransactionRecord } from "../models/TransactionRecord";
 import { ServerDirectory } from "../service";
 import { removeUnsafeCharacters } from "./removeUnsafeCharacters";
 
@@ -20,7 +20,7 @@ export function areListingsValid(listings: any[]): boolean {
 	return true;
 }
 
-export function areHistoryEntriesValid(entries: MarketBoardTransactionRecord[]): boolean {
+export function areHistoryEntriesValid(entries: TransactionRecord[]): boolean {
 	for (const entry of entries) {
 		if (
 			entry.hq == null ||
@@ -41,7 +41,7 @@ export function isValidName(input: any): boolean {
 	return true;
 }
 
-export function areValidTaxRates(rates: MarketTaxRates): boolean {
+export function areValidTaxRates(rates: TaxRates): boolean {
 	if (
 		!isValidTaxRate(rates.crystarium) ||
 		!isValidTaxRate(rates.gridania) ||

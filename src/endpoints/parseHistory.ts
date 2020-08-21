@@ -12,7 +12,7 @@ import { ParameterizedContext } from "koa";
 import { Collection } from "mongodb";
 
 import { HttpStatusCodes } from "../data/HTTP_STATUS";
-import { MinimizedHistoryEntry } from "../models/MinimizedTransactionEntry";
+import { MinimizedTransactionRecord } from "../models/MinimizedTransactionRecord";
 import { RemoteDataManager } from "../remote/RemoteDataManager";
 
 export async function parseHistory(ctx: ParameterizedContext) {
@@ -83,7 +83,7 @@ export async function parseHistory(ctx: ParameterizedContext) {
 	// Fill in unresolved items
 	const resolvedItems: number[] = data.items.map((item) => item.itemID);
 	const unresolvedItems: number[] = R.difference(itemIDs, resolvedItems);
-	data["unresolvedItems"] = unresolvedItems;
+	data.unresolvedItems = unresolvedItems;
 
 	for (const item of unresolvedItems) {
 		const unresolvedItemData = {
@@ -100,7 +100,7 @@ export async function parseHistory(ctx: ParameterizedContext) {
 	if (data.itemIDs.length === 1) {
 		data = data.items[0];
 	} else if (!unresolvedItems) {
-		delete data["unresolvedItems"];
+		delete data.unresolvedItems;
 	}
 
 	ctx.body = data;

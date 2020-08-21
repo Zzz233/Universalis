@@ -2,13 +2,13 @@ import * as R from "remeda";
 import { hasHtmlTags } from "./hasHtmlTags";
 import { removeUnsafeCharacters } from "./removeUnsafeCharacters";
 
-import { MarketBoardTransactionRecord } from "../models/MarketBoardTransactionRecord";
-import { MarketBoardTransactionRecordHydrated } from "../models/MarketBoardTransactionRecordHydrated";
+import { HydratedTransactionRecord } from "../models/HydratedTransactionRecord";
+import { TransactionRecord } from "../models/TransactionRecord";
 
 export function cleanHistoryEntry(
-	entry: MarketBoardTransactionRecord,
+	entry: TransactionRecord,
 	sourceName?: string,
-): MarketBoardTransactionRecord {
+): TransactionRecord {
 	const stringifiedEntry = JSON.stringify(entry);
 	if (hasHtmlTags(stringifiedEntry)) {
 		entry = JSON.parse(stringifiedEntry.replace(/<[\s\S]*?>/, ""));
@@ -33,8 +33,8 @@ export function cleanHistoryEntry(
 }
 
 export function cleanHistoryEntryOutput(
-	entry: MarketBoardTransactionRecordHydrated,
-): MarketBoardTransactionRecordHydrated {
+	entry: HydratedTransactionRecord,
+): HydratedTransactionRecord {
 	const stringifiedEntry = JSON.stringify(entry);
 	if (hasHtmlTags(stringifiedEntry)) {
 		entry = JSON.parse(stringifiedEntry.replace(/<[\s\S]*?>/, ""));

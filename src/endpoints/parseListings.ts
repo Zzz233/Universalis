@@ -7,37 +7,62 @@
 
 import * as R from "remeda";
 
-import {
-	appendWorldDC,
-	calcSaleVelocity,
-	calcStandardDeviation,
-	calcTrimmedAverage,
-	makeDistrTable,
-} from "../util";
+import fs from "fs";
+import path from "path";
+
+import { aql } from "arangojs";
+import { ArrayCursor } from "arangojs/lib/cjs/cursor";
+import { ParameterizedContext } from "koa";
+import { HTTP_STATUS } from "../data";
+import { Database } from "../db";
+import { CurrentMarketData } from "../models/CurrentMarketData";
+import { HydratedCurrentMarketData } from "../models/HydratedCurrentMarketData";
+import { tryGetDcName, tryGetWorldId } from "../util";
+
+const marketableItemIds = JSON.parse(
+	fs.readFileSync(path.join(__dirname, "..", "..", "public", "json", "item.json")).toString(),
+);
 
 export async function parseListings(ctx: ParameterizedContext) {
-	const itemIDs: number[] = (ctx.params.item as string).split(",").map((id, index) => {
+	const itemIds = (ctx.params.item as string).split(",").map((id, index) => {
 		if (index > 100) return;
 		return parseInt(id);
 	});
 
-	if (itemIDs.length === 1) {
-		const marketableItems = await rdm.getMarketableItemIDs();
-		if (!marketableItems.includes(itemIDs[0])) {
-			ctx.throw(HttpStatusCodes.NOT_FOUND);
+	if (itemIds.length === 1) {
+		if (!marketableItemIds.includes(itemIds[0])) {
+			ctx.throw(HTTP_STATUS.NOT_FOUND);
 		}
 	}
 
-	// Query construction
-	const query: WorldDCQuery = { itemID: { $in: itemIDs } };
-	appendWorldDC(query, worldMap, ctx);
+	const worldId = tryGetWorldId(ctx);
+	const dcName = tryGetDcName(ctx);
+	if (worldId == null && dcName == null) ctx.throw("Invalid World or Data Center");
 
-	// Request database info
-	let data = {
-		itemIDs,
-		items: await recentData.find(query, { projection: { _id: 0, uploaderID: 0 } }).toArray(),
-	};
-	appendWorldDC(data, worldMap, ctx);
+	for (const itemId of itemIds) {
+		let data: ArrayCursor;
+		if (worldId != null) {
+			data = await Database.query(aql`
+				FOR currentDataEntry IN CurrentData
+					FILTER currentDataEntry.worldID == ${worldId}
+					FILTER currentDataEntry.itemID == ${itemId}
+					RETURN currentDataEntry
+			`);
+		} else {
+			data = await Database.query(aql`
+				FOR currentDataEntry IN CurrentData
+					FILTER currentDataEntry.dcName == ${dcName}
+					FILTER currentDataEntry.itemID == ${itemId}
+					RETURN currentDataEntry
+			`);
+		}
+
+		const processedData = await data.map((o: CurrentMarketData) => {
+			return {
+				//
+			} as HydratedCurrentMarketData;
+		});
+	}
 
 	// Do some post-processing on resolved item listings.
 	for (let i = 0; i < data.items.length; i++) {
@@ -105,7 +130,7 @@ export async function parseListings(ctx: ParameterizedContext) {
 	// Fill in unresolved items
 	const resolvedItems: number[] = data.items.map((item) => item.itemID);
 	const unresolvedItems: number[] = R.difference(itemIDs, resolvedItems);
-	data["unresolvedItems"] = unresolvedItems;
+	data.unresolvedItems = unresolvedItems;
 
 	for (const item of unresolvedItems) {
 		const unresolvedItemData = {
@@ -122,7 +147,7 @@ export async function parseListings(ctx: ParameterizedContext) {
 	if (data.itemIDs.length === 1) {
 		data = data.items[0];
 	} else if (!unresolvedItems) {
-		delete data["unresolvedItems"];
+		delete data.unresolvedItems;
 	}
 
 	ctx.body = data;

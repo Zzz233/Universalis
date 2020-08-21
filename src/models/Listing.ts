@@ -1,7 +1,7 @@
 import { ItemMateria } from "./ItemMateria";
 import { OriginRecord } from "./OriginRecord";
 
-export interface MarketBoardListing extends OriginRecord {
+export interface Listing extends OriginRecord {
 	listingID: string;
 	lastReviewTime: number;
 
@@ -12,7 +12,6 @@ export interface MarketBoardListing extends OriginRecord {
 
 	pricePerUnit: number;
 	quantity: number;
-	total: number;
 
 	hq: boolean;
 

@@ -6,56 +6,36 @@
  * @disabled
  */
 
+import { aql } from "arangojs";
 import { ParameterizedContext } from "koa";
-import { Collection, Cursor } from "mongodb";
-import { ItemDemand } from "../models/ItemDemand";
-import { capitalise } from "../util";
+import { Database } from "../db";
+import { tryGetEntriesToReturn, tryGetWorldId } from "../util";
+
+const MS_PER_DAY = 86400000;
 
 export async function parseMostDemandedItems(ctx: ParameterizedContext) {
-	let worldID: string | number = ctx.queryParams.world ? capitalise(ctx.queryParams.world) : null;
+	const worldId = tryGetWorldId(ctx);
+	if (worldId == null) ctx.throw(404, "Invalid World");
 
-	if (worldID && !parseInt(worldID)) {
-		worldID = worldMap.get(worldID);
-	} else if (parseInt(worldID)) {
-		worldID = parseInt(worldID);
-	}
+	const entriesToReturn = tryGetEntriesToReturn(ctx) || 50;
 
-	let entriesToReturn: any = ctx.queryParams.entries;
-	if (entriesToReturn) entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
+	// Get items updated today with the highest gil trade volume
+	const data = await Database.query(aql`
+		FOR record IN TransactionRecords
+			FILTER record.worldID == ${worldId}
+			FILTER record.timestamp * 1000 > ${Date.now() - MS_PER_DAY}
+			COLLECT itemID = record.itemID
+			AGGREGATE gilTradeVolumeByDay = SUM(record.pricePerUnit * record.quantity)
+			SORT gilTradeVolumeByDay DESC
+			LIMIT ${entriesToReturn}
+			RETURN {
+				itemID,
+				worldID: ${worldId},
+				gilTradeVolumeByDay
+			}
+	`);
 
-	ctx.body = await getMostDemandedItems(worldID as number, entriesToReturn, history);
-}
-
-async function getMostDemandedItems(
-	worldID: number,
-	count: number,
-	history: Collection,
-): Promise<ItemDemand[]> {
-	let out: ItemDemand[] = [];
-
-	const query = {
-		worldID,
-		timestamp: {
-			$gte: new Date().valueOf() - 86400000,
-		},
+	ctx.body = {
+		items: await data.all(),
 	};
-
-	const items = await history.find(query).forEach((item) => {
-		const total: number = item.pricePerUnit * item.quantity;
-		const existing = out.find((id) => id.itemID === item.itemID);
-		if (!existing) {
-			out.push({
-				itemID: item.itemID,
-				gilTradeVolumePerDay: total,
-			});
-			return;
-		}
-		existing.gilTradeVolumePerDay += total;
-	});
-
-	out = out
-		.sort((a, b) => b.gilTradeVolumePerDay - a.gilTradeVolumePerDay) // Sort in descending order
-		.slice(0, count);
-
-	return out;
 }

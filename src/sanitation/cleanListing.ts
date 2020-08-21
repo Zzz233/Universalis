@@ -4,12 +4,12 @@ import { parseSha256 } from "../util/cryptography";
 import { hasHtmlTags } from "./hasHtmlTags";
 import { removeUnsafeCharacters } from "./removeUnsafeCharacters";
 
-import { MarketBoardListing } from "../models/MarketBoardListing";
-import { MarketBoardListingHydrated } from "../models/MarketBoardListingHydrated";
+import { HydratedListing } from "../models/HydratedListing";
+import { Listing } from "../models/Listing";
 
 const GAME_RELEASE_DATE_SECONDS = Math.floor(new Date(2013, 7, 27).valueOf() / 1000);
 
-export function cleanListing(listing: MarketBoardListing, sourceName?: string): MarketBoardListing {
+export function cleanListing(listing: Listing, sourceName?: string): Listing {
 	const stringifiedListing = JSON.stringify(listing);
 	if (hasHtmlTags(stringifiedListing)) {
 		listing = JSON.parse(stringifiedListing.replace(/<[\s\S]*?>/, ""));
@@ -52,9 +52,7 @@ export function cleanListing(listing: MarketBoardListing, sourceName?: string): 
 	return newListing;
 }
 
-export function cleanListingOutput(
-	listing: MarketBoardListingHydrated,
-): MarketBoardListingHydrated {
+export function cleanListingOutput(listing: HydratedListing): HydratedListing {
 	const stringifiedListing = JSON.stringify(listing);
 	if (hasHtmlTags(stringifiedListing)) {
 		listing = JSON.parse(stringifiedListing.replace(/<[\s\S]*?>/, ""));
@@ -84,7 +82,7 @@ export function cleanListingOutput(
 			retainerCity:
 				typeof listing.retainerCity === "number"
 					? listing.retainerCity
-					: City[listing.retainerCity],
+					: CITY[listing.retainerCity],
 			retainerName: removeUnsafeCharacters(listing.retainerName),
 			total: listing.pricePerUnit * listing.quantity,
 			lastReviewTime:
