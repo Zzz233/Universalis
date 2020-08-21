@@ -1,7 +1,5 @@
 import winston, { Logger as WinstonLogger } from "winston";
 
-require("winston-mongodb"); // Applies itself to the winston.transports namespace
-
 export class Logger {
 	public static log(message: string) {
 		Logger.instance().logger.info(message);
@@ -17,22 +15,17 @@ export class Logger {
 	private static sInstance: Logger;
 	private static instance(): Logger {
 		if (!Logger.sInstance) {
-			Logger.sInstance = new Logger(process.env["UNIVERSALIS_DB_CONNECTION"]);
+			Logger.sInstance = new Logger();
 		}
 		return Logger.sInstance;
 	}
 
 	private logger: WinstonLogger;
 
-	private constructor(dbConnection: string) {
+	private constructor() {
+		// Also gets logged to files via PM2 on our setup
 		this.logger = winston.createLogger({
 			transports: [
-				new winston.transports["MongoDB"]({
-					capped: true,
-					cappedMax: 10000,
-					db: dbConnection,
-					options: { useNewUrlParser: true, useUnifiedTopology: true },
-				}),
 				new winston.transports.File({
 					filename: "logs/error.log",
 					level: "error",

@@ -4,9 +4,7 @@ import { getSheet } from "../util";
 
 export class ServerDirectory {
 	public static getWorldIdByName(name: string): number {
-		return ServerDirectory.instance().worlds.find(
-			(world) => world.name === name,
-		).id;
+		return ServerDirectory.instance().worlds.find((world) => world.name === name).id;
 	}
 
 	public static getWorldNameById(id: number): string {

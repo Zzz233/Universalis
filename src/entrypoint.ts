@@ -1,3 +1,5 @@
+import { App } from "./App";
+import { Database } from "./db";
 import { Logger, ServerDirectory } from "./service";
 
 import { parseContentID } from "./endpoints/parseContentID";
@@ -14,13 +16,12 @@ import { upload } from "./endpoints/upload";
 
 import { parseHighestSaleVelocityItems } from "./endpoints/parseHighestSaleVelocityItems";
 
-import { App } from "./App";
-
 const universalis = new App();
 
-const init = async () => {
+(async () => {
 	await universalis.initialize();
 	await ServerDirectory.initialize();
+	await Database.initialize();
 
 	universalis.setRouting((router) => {
 		// Documentation page (temporary)
@@ -43,10 +44,8 @@ const init = async () => {
 			.get("/api/marketable", serveItemIdJSON)
 			.post("/upload", upload);
 	});
-};
 
-init().then(() => {
 	const port = process.argv[2] ? parseInt(process.argv[2]) : 4000;
 	universalis.start(port);
 	Logger.log(`Server started on port ${port}.`);
-});
+})();
