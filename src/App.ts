@@ -7,18 +7,10 @@ import serve from "koa-static";
 import { Logger } from "./service";
 
 export class App {
-	private static sInstance: App;
-	private static instance() {
-		if (!App.sInstance) {
-			App.sInstance = new App();
-		}
-		return App.sInstance;
-	}
-
 	private framework: Koa;
 	private router: Router;
 
-	private constructor() {
+	constructor() {
 		this.framework = new Koa();
 		this.router = new Router();
 	}
