@@ -1,5 +1,5 @@
 export const DC_WORLDS = {
-	AETHER: [
+	Aether: [
 		"Adamantoise",
 		"Cactuar",
 		"Faerie",
@@ -9,18 +9,9 @@ export const DC_WORLDS = {
 		"Sargatanas",
 		"Siren",
 	],
-	CHAOS: ["Cerberus", "Louisoix", "Moogle", "Omega", "Ragnarok", "Spriggan"],
-	CRYSTAL: [
-		"Balmung",
-		"Brynhildr",
-		"Coeurl",
-		"Diabolos",
-		"Goblin",
-		"Malboro",
-		"Mateus",
-		"Zalera",
-	],
-	ELEMENTAL: [
+	Chaos: ["Cerberus", "Louisoix", "Moogle", "Omega", "Ragnarok", "Spriggan"],
+	Crystal: ["Balmung", "Brynhildr", "Coeurl", "Diabolos", "Goblin", "Malboro", "Mateus", "Zalera"],
+	Elemental: [
 		"Aegis",
 		"Atomos",
 		"Carbuncle",
@@ -32,7 +23,7 @@ export const DC_WORLDS = {
 		"Typhon",
 		"Unicorn",
 	],
-	GAIA: [
+	Gaia: [
 		"Alexander",
 		"Bahamut",
 		"Durandal",
@@ -45,8 +36,8 @@ export const DC_WORLDS = {
 		"Yojimbo",
 		"Zeromus",
 	],
-	LIGHT: ["Lich", "Odin", "Phoenix", "Shiva", "Zodiark", "Twintania"],
-	MANA: [
+	Light: ["Lich", "Odin", "Phoenix", "Shiva", "Zodiark", "Twintania"],
+	Mana: [
 		"Anima",
 		"Asura",
 		"Belias",
@@ -59,7 +50,7 @@ export const DC_WORLDS = {
 		"Shinryu",
 		"Titan",
 	],
-	PRIMAL: [
+	Primal: [
 		"Behemoth",
 		"Excalibur",
 		"Exodus",
@@ -98,7 +89,7 @@ export const DC_WORLDS = {
 		"RouFengHaiWan",
 		"HuPoYuan",
 	],
-	LUXINGNIAO: [
+	LuXingNiao: [
 		"HongYuHai",
 		"ShenYiZhiDi",
 		"LaNuoXiYa",
@@ -108,7 +99,7 @@ export const DC_WORLDS = {
 		"WoXianXiRan",
 		"ChenXiWangZuo",
 	],
-	MOGULI: [
+	MoGuLi: [
 		"BaiYinXiang",
 		"BaiJinHuanXiang",
 		"ShenQuanHen",
@@ -118,7 +109,7 @@ export const DC_WORLDS = {
 		"Longchaoshendian",
 		"MengYuBaoJing",
 	],
-	MAOXIAOPANG: [
+	MaoXiaoPang: [
 		"ZiShuiZhanQiao",
 		"YanXia",
 		"JingYuZhuangYuan",

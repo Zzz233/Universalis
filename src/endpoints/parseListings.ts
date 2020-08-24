@@ -5,29 +5,21 @@
  * @param item number The item to retrieve data for.
  */
 
-import * as R from "remeda";
-
 import fs from "fs";
 import path from "path";
+import * as R from "remeda";
 
 import { aql } from "arangojs";
-import { ArrayCursor } from "arangojs/lib/cjs/cursor";
 import { ParameterizedContext } from "koa";
 import { CITY, HTTP_STATUS } from "../data";
 import { Database } from "../db";
-import { AveragePrices } from "../models/AveragePrices";
 import { CurrentMarketData } from "../models/CurrentMarketData";
 import { HydratedCurrentMarketData } from "../models/HydratedCurrentMarketData";
-import { OriginRecord } from "../models/OriginRecord";
-import { SaleVelocitySeries } from "../models/SaleVelocitySeries";
-import { StackSizeHistograms } from "../models/StackSizeHistograms";
-import { TransactionRecord } from "../models/TransactionRecord";
 import { ServerDirectory } from "../service";
 import {
-	calcSaleVelocity,
-	calcStandardDeviation,
-	calcTrimmedAverage,
-	makeDistrTable,
+	calculateAveragePrices,
+	calculateSaleVelocities,
+	makeStackSizeHistograms,
 	tryGetDcName,
 	tryGetWorldId,
 } from "../util";
@@ -49,8 +41,9 @@ export async function parseListings(ctx: ParameterizedContext) {
 	}
 
 	const worldId = tryGetWorldId(ctx);
-	const dcName = tryGetDcName(ctx);
+	let dcName = tryGetDcName(ctx);
 	if (worldId == null && dcName == null) ctx.throw("Invalid World or Data Center");
+	if (dcName == null) dcName = ServerDirectory.getDataCenterForWorldId(worldId);
 
 	const processedItems: HydratedCurrentMarketData[] = [];
 	for (const itemId of itemIds) {
@@ -103,6 +96,7 @@ export async function parseListings(ctx: ParameterizedContext) {
 		const unresolvedItemData: HydratedCurrentMarketData = {
 			itemID: item,
 			worldID: worldId,
+			worldName: ServerDirectory.getWorldNameById(worldId),
 			dcName,
 			lastUploadTime: 0,
 			listings: [],
@@ -137,6 +131,7 @@ function hydrate(o: CurrentMarketData): HydratedCurrentMarketData {
 	const hqItems = o.recentHistory.filter((entry) => entry.hq);
 	return R.pipe(
 		o,
+		R.merge({ worldName: ServerDirectory.getWorldNameById(o.worldID) }),
 		R.merge({
 			listings: o.listings.map((l) =>
 				R.merge(l, {
@@ -190,53 +185,4 @@ async function getMarketDataForDataCenter(
 			}
 	`);
 	return await data.all();
-}
-
-function calculateSaleVelocities(
-	regularSeries: TransactionRecord[],
-	nqSeries: TransactionRecord[],
-	hqSeries: TransactionRecord[],
-): SaleVelocitySeries {
-	// Per day
-	const regularSaleVelocity = calcSaleVelocity(...regularSeries.map((entry) => entry.timestamp));
-	const nqSaleVelocity = calcSaleVelocity(...nqSeries.map((entry) => entry.timestamp));
-	const hqSaleVelocity = calcSaleVelocity(...hqSeries.map((entry) => entry.timestamp));
-	return {
-		regularSaleVelocity,
-		nqSaleVelocity,
-		hqSaleVelocity,
-	};
-}
-
-function calculateAveragePrices(
-	regularSeries: TransactionRecord[],
-	nqSeries: TransactionRecord[],
-	hqSeries: TransactionRecord[],
-): AveragePrices {
-	const ppu = regularSeries.map((entry) => entry.pricePerUnit);
-	const nqPpu = nqSeries.map((entry) => entry.pricePerUnit);
-	const hqPpu = hqSeries.map((entry) => entry.pricePerUnit);
-	const averagePrice = calcTrimmedAverage(calcStandardDeviation(...ppu), ...ppu);
-	const averagePriceNQ = calcTrimmedAverage(calcStandardDeviation(...nqPpu), ...nqPpu);
-	const averagePriceHQ = calcTrimmedAverage(calcStandardDeviation(...hqPpu), ...hqPpu);
-	return {
-		averagePrice,
-		averagePriceNQ,
-		averagePriceHQ,
-	};
-}
-
-function makeStackSizeHistograms(
-	regularSeries: TransactionRecord[],
-	nqSeries: TransactionRecord[],
-	hqSeries: TransactionRecord[],
-): StackSizeHistograms {
-	const stackSizeHistogram = makeDistrTable(...regularSeries.map((entry) => entry.quantity));
-	const stackSizeHistogramNQ = makeDistrTable(...nqSeries.map((entry) => entry.quantity));
-	const stackSizeHistogramHQ = makeDistrTable(...hqSeries.map((entry) => entry.quantity));
-	return {
-		stackSizeHistogram,
-		stackSizeHistogramNQ,
-		stackSizeHistogramHQ,
-	};
 }

@@ -20,7 +20,7 @@ export async function parseHighestSaleVelocityItems(ctx: ParameterizedContext) {
 	const entriesToReturn = tryGetEntriesToReturn(ctx) || 50;
 
 	const data = await Database.query(aql`
-		FOR record IN TransactionRecords
+		FOR record IN MinimizedTransactionRecords
 			FILTER record.worldID == ${worldId}
 			FILTER record.timestamp * 1000 > ${Date.now() - MS_PER_WEEK}
 			COLLECT itemID = record.itemID WITH COUNT IN n

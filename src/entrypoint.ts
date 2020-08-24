@@ -42,6 +42,7 @@ const universalis = new App();
 			.get("/api/extra/stats/world-upload-counts", parseWorldUploadCounts)
 			.get("/api/extra/stats/uploader-upload-counts", parseUploaderCounts)
 			.get("/api/marketable", serveItemIdJson)
+			.post("/upload/:apiKey", upload)
 			.post("/upload", upload);
 	});
 

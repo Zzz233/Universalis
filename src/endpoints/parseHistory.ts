@@ -4,104 +4,166 @@
  * @param world string | number The world or DC to retrieve data from.
  * @param item number The item to retrieve data for.
  */
+
+import fs from "fs";
+import path from "path";
 import * as R from "remeda";
 
-import { appendWorldDC, makeDistrTable } from "../util";
+import {
+	makeStackSizeHistograms,
+	tryGetDcName,
+	tryGetEntriesToReturn,
+	tryGetWorldId,
+} from "../util";
 
 import { ParameterizedContext } from "koa";
-import { Collection } from "mongodb";
 
-import { HttpStatusCodes } from "../data/HTTP_STATUS";
+import { aql } from "arangojs";
+import { HTTP_STATUS } from "../data/HTTP_STATUS";
+import { Database } from "../db";
+import { HydratedMinimizedTransactionRecord } from "../models/HydratedMinimizedTransactionRecord";
+import { HydratedMinimizedTransactionSet } from "../models/HydratedMinimizedTransactionSet";
 import { MinimizedTransactionRecord } from "../models/MinimizedTransactionRecord";
-import { RemoteDataManager } from "../remote/RemoteDataManager";
+import { MinimizedTransactionSet } from "../models/MinimizedTransactionSet";
+import { ServerDirectory } from "../service";
+
+const marketableItemIds = JSON.parse(
+	fs.readFileSync(path.join(__dirname, "..", "..", "public", "json", "item.json")).toString(),
+);
 
 export async function parseHistory(ctx: ParameterizedContext) {
-	let entriesToReturn: any = ctx.queryParams.entries;
-	if (entriesToReturn) entriesToReturn = parseInt(entriesToReturn.replace(/[^0-9]/g, ""));
+	const entriesToReturn = tryGetEntriesToReturn(ctx);
 
-	const itemIDs: number[] = (ctx.params.item as string).split(",").map((id, index) => {
+	const itemIds: number[] = (ctx.params.item as string).split(",").map((id, index) => {
 		if (index > 100) return;
 		return parseInt(id);
 	});
 
-	if (itemIDs.length === 1) {
-		const marketableItems = await rdm.getMarketableItemIDs();
-		if (!marketableItems.includes(itemIDs[0])) {
-			ctx.throw(HttpStatusCodes.NOT_FOUND);
+	if (itemIds.length === 1) {
+		if (!marketableItemIds.includes(itemIds[0])) {
+			ctx.throw(HTTP_STATUS.NOT_FOUND);
 		}
 	}
 
-	// Query construction
-	const query = { itemID: { $in: itemIDs } };
-	appendWorldDC(query, worldMap, ctx);
+	const worldId = tryGetWorldId(ctx);
+	let dcName = tryGetDcName(ctx);
+	if (worldId == null && dcName == null) ctx.throw("Invalid World or Data Center");
+	if (dcName == null) dcName = ServerDirectory.getDataCenterForWorldId(worldId);
 
-	// Request database info
-	let data = {
-		itemIDs,
-		items: await history
-			.find(query, {
-				projection: { _id: 0, uploaderID: 0 },
-			})
-			.toArray(),
+	const processedItems: HydratedMinimizedTransactionSet[] = [];
+	for (const itemId of itemIds) {
+		let data: MinimizedTransactionSet;
+		if (worldId != null) {
+			// World ID is more specific than DC so we prioritize that
+			data = await getMinimizedTransactionsForWorld(itemId, worldId);
+		} else {
+			data = await getMinimizedTransactionsForDataCenter(itemId, dcName);
+		}
+
+		const hydratedData = hydrate(data);
+
+		processedItems.push(hydratedData);
+	}
+
+	const resolvedItems = processedItems.map((item) => item.itemID);
+	const unresolvedItems = R.difference(itemIds, resolvedItems);
+
+	const multipleItemResponse: {
+		itemIDs: number[];
+		items: any[];
+		worldID: number;
+		dcName: string;
+		unresolvedItems: number[];
+	} = {
+		itemIDs: itemIds,
+		items: processedItems,
+		worldID: worldId,
+		dcName,
+		unresolvedItems,
 	};
-	appendWorldDC(data, worldMap, ctx);
 
-	// Data filtering
-	data.items = data.items.map(
-		(item: {
-			entries: MinimizedHistoryEntry[];
-			stackSizeHistogram: { [key: number]: number };
-			stackSizeHistogramNQ: { [key: number]: number };
-			stackSizeHistogramHQ: { [key: number]: number };
-			lastUploadTime: number;
-		}) => {
-			if (entriesToReturn) item.entries = item.entries.slice(0, Math.min(500, entriesToReturn));
-			item.entries = item.entries.map((entry: MinimizedHistoryEntry) => {
-				delete entry.uploaderID;
-				return entry;
-			});
-
-			const nqItems = item.entries.filter((entry) => !entry.hq);
-			const hqItems = item.entries.filter((entry) => entry.hq);
-
-			item.stackSizeHistogram = makeDistrTable(
-				...item.entries.map((entry) => (entry.quantity != null ? entry.quantity : 0)),
-			);
-			item.stackSizeHistogramNQ = makeDistrTable(
-				...nqItems.map((entry) => (entry.quantity != null ? entry.quantity : 0)),
-			);
-			item.stackSizeHistogramHQ = makeDistrTable(
-				...hqItems.map((entry) => (entry.quantity != null ? entry.quantity : 0)),
-			);
-
-			// Error handling
-			if (!item.lastUploadTime) item.lastUploadTime = 0;
-			return item;
-		},
-	);
-
-	// Fill in unresolved items
-	const resolvedItems: number[] = data.items.map((item) => item.itemID);
-	const unresolvedItems: number[] = R.difference(itemIDs, resolvedItems);
-	data.unresolvedItems = unresolvedItems;
+	multipleItemResponse.unresolvedItems = unresolvedItems;
 
 	for (const item of unresolvedItems) {
-		const unresolvedItemData = {
-			entries: [],
+		const unresolvedItemData: HydratedMinimizedTransactionSet = {
 			itemID: item,
+			worldID: worldId,
+			worldName: ServerDirectory.getWorldNameById(worldId),
+			dcName,
 			lastUploadTime: 0,
+			entries: [],
+			stackSizeHistogram: null,
+			stackSizeHistogramNQ: null,
+			stackSizeHistogramHQ: null,
 		};
-		appendWorldDC(unresolvedItemData, worldMap, ctx);
-
-		data.items.push(unresolvedItemData);
+		multipleItemResponse.items.push(unresolvedItemData);
 	}
 
 	// If only one item is requested we just turn the whole thing into the one item.
-	if (data.itemIDs.length === 1) {
-		data = data.items[0];
-	} else if (!unresolvedItems) {
-		delete data.unresolvedItems;
+	if (itemIds.length === 1) {
+		ctx.body = multipleItemResponse.items[0];
+	} else {
+		ctx.body = multipleItemResponse;
 	}
+}
 
-	ctx.body = data;
+function hydrate(record: MinimizedTransactionSet): HydratedMinimizedTransactionSet {
+	const nqItems = record.entries.filter((entry) => !entry.hq);
+	const hqItems = record.entries.filter((entry) => entry.hq);
+	return R.pipe(
+		record,
+		R.merge({ worldName: ServerDirectory.getWorldNameById(record.worldID) }),
+		R.merge({
+			entries: record.entries.map((r) =>
+				R.merge(r, {
+					worldName: ServerDirectory.getWorldNameById(r.worldID),
+				}),
+			),
+		}),
+		R.merge(makeStackSizeHistograms(record.entries, nqItems, hqItems)),
+	);
+}
+
+async function getMinimizedTransactionsForWorld(
+	itemId: number,
+	worldId: number,
+): Promise<MinimizedTransactionSet> {
+	const data = await Database.query(aql`
+		FOR record IN MinimizedTransactionRecords
+			FILTER record.worldID == ${worldId}
+			FILTER record.itemID == ${itemId}
+			SORT record.uploadTime DESC
+			LIMIT 1200
+			RETURN record
+	`);
+	const records: MinimizedTransactionRecord[] = await data.all();
+	return {
+		itemID: itemId,
+		lastUploadTime: Math.max(...records.map((r) => r.uploadTime)),
+		worldID: worldId,
+		dcName: ServerDirectory.getDataCenterForWorldId(worldId),
+		entries: records,
+	};
+}
+
+async function getMinimizedTransactionsForDataCenter(
+	itemId: number,
+	dcName: string,
+): Promise<MinimizedTransactionSet> {
+	const data = await Database.query(aql`
+		FOR record IN MinimizedTransactionRecords
+			FILTER record.dcName == ${dcName}
+			FILTER record.itemID == ${itemId}
+			SORT record.uploadTime DESC
+			LIMIT 1200
+			RETURN record
+	`);
+	const records: MinimizedTransactionRecord[] = await data.all();
+	return {
+		itemID: itemId,
+		lastUploadTime: Math.max(...records.map((r) => r.uploadTime)),
+		worldID: null,
+		dcName,
+		entries: records,
+	};
 }

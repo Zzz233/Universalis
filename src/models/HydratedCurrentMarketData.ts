@@ -10,6 +10,8 @@ export interface HydratedCurrentMarketData
 		AveragePrices,
 		SaleVelocitySeries,
 		StackSizeHistograms {
+	worldName: string;
+
 	listings: HydratedListing[];
 	recentHistory: HydratedTransactionRecord[];
 }

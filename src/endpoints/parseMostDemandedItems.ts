@@ -21,7 +21,7 @@ export async function parseMostDemandedItems(ctx: ParameterizedContext) {
 
 	// Get items updated today with the highest gil trade volume
 	const data = await Database.query(aql`
-		FOR record IN TransactionRecords
+		FOR record IN MinimizedTransactionRecords
 			FILTER record.worldID == ${worldId}
 			FILTER record.timestamp * 1000 > ${Date.now() - MS_PER_DAY}
 			COLLECT itemID = record.itemID

@@ -4,22 +4,51 @@ import { getSheet } from "../util";
 
 export class ServerDirectory {
 	public static getWorldIdByName(name: string): number {
+		if (name == null) return null;
 		return ServerDirectory.instance().worlds.find((world) => world.name === name).id;
 	}
 
 	public static getWorldNameById(id: number): string {
+		if (id == null) return null;
 		return ServerDirectory.instance()
 			.worlds.filter((world) => !world.isAlias)
 			.find((world) => world.id === id).name;
+	}
+
+	public static getDataCenterForWorldId(worldId: number): string {
+		const worldName = this.getWorldNameById(worldId);
+		for (const dc in DC_WORLDS) {
+			if (DC_WORLDS.hasOwnProperty(dc)) {
+				for (const world of DC_WORLDS[dc] as string[]) {
+					if (world === worldName) {
+						return dc;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	public static getDataCenterForWorldName(worldName: string): string {
+		for (const dc in DC_WORLDS) {
+			if (DC_WORLDS.hasOwnProperty(dc)) {
+				for (const world of DC_WORLDS[dc] as string[]) {
+					if (world === worldName) {
+						return dc;
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	public static async initialize(): Promise<void> {
 		let worldSheet = await getSheet("World.csv");
 		worldSheet = worldSheet.slice(3);
 
-		const lxnWorlds = DC_WORLDS["LUXINGNIAO"];
-		const mglWorlds = DC_WORLDS["MOGULI"];
-		const mxpWorlds = DC_WORLDS["MAOXIAOPANG"];
+		const lxnWorlds = DC_WORLDS.LuXingNiao;
+		const mglWorlds = DC_WORLDS.MoGuLi;
+		const mxpWorlds = DC_WORLDS.MaoXiaoPang;
 
 		for (const row of worldSheet) {
 			const worldName = row[1];
