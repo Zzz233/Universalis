@@ -5,6 +5,10 @@
 
 import { Context } from "koa";
 import * as R from "remeda";
+import { CITY, HTTP_STATUS } from "../data";
+import { TransactionRecord } from "../models/TransactionRecord";
+import { Logger } from "../service";
+import { parseSha256 } from "../util";
 
 export async function upload(ctx: Context) {
 	validation.validateUploadDataPreCast(ctx);
@@ -16,17 +20,15 @@ export async function upload(ctx: Context) {
 	if (!trustedSource) return ctx.throw(HttpStatusCodes.UNAUTHENTICATED);
 	const sourceName = trustedSource.sourceName;
 	promises.push(trustedSourceManager.increaseUploadCount(ctx.params.apiKey));
-	logger.info("Received upload from " + sourceName + ":\n" + JSON.stringify(ctx.request.body));
+	Logger.log("Received upload from " + sourceName + ":\n" + JSON.stringify(ctx.request.body));
 	promises.push(extraDataManager.incrementDailyUploads());
 
 	// Preliminary data processing and metadata stuff
 	if (ctx.request.body.retainerCity)
-		ctx.request.body.retainerCity = City[ctx.request.body.retainerCity];
+		ctx.request.body.retainerCity = CITY[ctx.request.body.retainerCity];
 	const uploadData: GenericUpload = ctx.request.body;
 
-	uploadData.uploaderID = sha("sha256")
-		.update(uploadData.uploaderID + "")
-		.digest("hex");
+	uploadData.uploaderID = parseSha256(uploadData.uploaderID + "");
 
 	await validation.validateUploadData(logger, {
 		ctx,
@@ -34,16 +36,6 @@ export async function upload(ctx: Context) {
 		blacklistManager,
 		remoteDataManager,
 	});
-
-	// Metadata
-	if (uploadData.worldID) {
-		promises.push(extraDataManager.incrementWorldUploads(worldIDMap.get(uploadData.worldID)));
-	}
-
-	if (uploadData.itemID) {
-		promises.push(extraDataManager.incrementPopularUploads(uploadData.itemID));
-		promises.push(extraDataManager.addRecentlyUpdatedItem(uploadData.itemID));
-	}
 
 	// Hashing and passing data
 	if (uploadData.listings) {
@@ -82,7 +74,7 @@ export async function upload(ctx: Context) {
 	}
 
 	if (uploadData.entries) {
-		const dataArray: MarketBoardHistoryEntry[] = [];
+		const dataArray: TransactionRecord[] = [];
 		uploadData.entries = uploadData.entries.map((entry) => {
 			return validation.cleanHistoryEntry(entry, sourceName);
 		});
@@ -132,8 +124,8 @@ export async function upload(ctx: Context) {
 					);
 				}
 			} else {
-				logger.warn("Attempted to run a bulk delisting of over 100 items, rejecting.");
-				return ctx.throw(HttpStatusCodes.UNPROCESSABLE_ENTITY);
+				Logger.warn("Attempted to run a bulk delisting of over 100 items, rejecting.");
+				return ctx.throw(HTTP_STATUS.UNPROCESSABLE_ENTITY);
 			}
 		}
 	}
