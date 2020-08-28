@@ -22,7 +22,7 @@ export async function parseLeastRecentlyUpdatedItems(ctx: ParameterizedContext) 
 		worldId = null;
 	}
 
-	const entriesToReturn = tryGetEntriesToReturn(ctx) || 50;
+	const entriesToReturn = tryGetEntriesToReturn(ctx) || 200;
 
 	// TODO: populate CurrentData with actual objects that have lastUploadTime: 0
 	const data = await Database.query(aql`
