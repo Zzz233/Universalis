@@ -8,10 +8,7 @@ export function calcAverage(...numbers: number[]): number {
 	return out / numbers.length;
 }
 
-export function calcTrimmedAverage(
-	standardDeviation: number,
-	...numbers: number[]
-): number {
+export function calcTrimmedAverage(standardDeviation: number, ...numbers: number[]): number {
 	if (numbers.length === 0) return 0;
 	let out = 0;
 
@@ -22,11 +19,7 @@ export function calcTrimmedAverage(
 	numbers.forEach(
 		(num) =>
 			(out +=
-				num *
-				Number(
-					num <= mean + 3 * standardDeviation &&
-						num >= mean - 3 * standardDeviation,
-				)),
+				num * Number(num <= mean + 3 * standardDeviation && num >= mean - 3 * standardDeviation)),
 	);
 
 	return out / numbers.length;
@@ -44,4 +37,8 @@ export function calcStandardDeviation(...numbers: number[]): number {
 	});
 
 	return Math.sqrt(sumSqr / (numbers.length - 1));
+}
+
+export function clamp(x: number, min: number, max: number): number {
+	return Math.max(min, Math.min(x, max));
 }
